@@ -20,10 +20,34 @@
 # asyncio.run(main())
 
 
-from fastapi import FastAPI, WebSocket
+# from fastapi import FastAPI, WebSocket
+# from fastapi.responses import HTMLResponse
+
+# app = FastAPI()
+
+# @app.get("/")
+# async def get():
+#     return HTMLResponse("WebSocket server is running.")
+
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await websocket.accept()
+#     while True:
+#         try:
+#             data = await websocket.receive_text()
+#             print("Received:", data)
+#             await websocket.send_text(f"Echo: {data}")
+#         except Exception as e:
+#             print("WebSocket connection closed:", e)
+#             break
+
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
+
+connected_clients = set()
 
 @app.get("/")
 async def get():
@@ -32,12 +56,18 @@ async def get():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        try:
+    connected_clients.add(websocket)
+    try:
+        while True:
             data = await websocket.receive_text()
             print("Received:", data)
-            await websocket.send_text(f"Echo: {data}")
-        except Exception as e:
-            print("WebSocket connection closed:", e)
-            break
+            # Broadcast to all connected clients
+            for client in connected_clients:
+                await client.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        print("Client disconnected")
+        connected_clients.remove(websocket)
+    except Exception as e:
+        print("WebSocket connection closed with error:", e)
+        connected_clients.remove(websocket)
 
