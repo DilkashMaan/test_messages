@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .chat-container {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 90%;
+        max-width: 600px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      #msgarea {
+        width: 100%;
+        height: 400px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        resize: none;
+        font-family: monospace;
+        margin-bottom: 15px;
+        white-space: pre-wrap;
+        overflow-y: auto;
+      }
+
+      #messageInput {
+        width: calc(100% - 120px);
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-right: 10px;
+        font-size: 16px;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <h1>WebSocket Chat</h1>
+      <textarea id="msgarea" readonly></textarea>
+      <div class="input-row">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button onclick="sendmessage()">Send</button>
+      </div>
+    </div>
+
+    <script>
+      const msg = document.getElementById("messageInput");
+      const msgarea = document.getElementById("msgarea");
+      const socket = new WebSocket("wss://test-messages.onrender.com/ws");
+
+      const sentMessages = new Set(); // to track what you sent
+
+      socket.onopen = function () {
+        console.log("Connected to WebSocket Server");
+      };
+
+      socket.onmessage = function (event) {
+        const message = event.data.trim();
+
+        let isOwnMessage = false;
+        for (const sent of sentMessages) {
+          if (message.includes(sent)) {
+            msgarea.value += `You: ${message}\n`;
+            sentMessages.delete(sent);
+            isOwnMessage = true;
+            break;
+          }
+        }
+
+        if (!isOwnMessage) {
+          msgarea.value += `Them: ${message}\n`;
+        }
+
+        msgarea.scrollTop = msgarea.scrollHeight;
+      };
+
+      function sendmessage() {
+        const messageText = msg.value.trim();
+        if (messageText && socket.readyState === WebSocket.OPEN) {
+          socket.send(messageText);
+          sentMessages.add(messageText);
+          msg.value = "";
+        }
+      }
+
+      msg.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          sendmessage();
+        }
+      });
+    </script>
+  </body>
+</html>
