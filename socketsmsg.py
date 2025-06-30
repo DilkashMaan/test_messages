@@ -61,9 +61,8 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             print("Received:", data)
-            # Broadcast to all connected clients
             for client in connected_clients:
-                await client.send_text(f"Echo: {data}")
+                await client.send_text({data})
     except WebSocketDisconnect:
         print("Client disconnected")
         connected_clients.remove(websocket)
