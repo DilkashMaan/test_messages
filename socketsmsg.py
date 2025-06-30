@@ -42,16 +42,47 @@
 #             break
 
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+# from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+# from fastapi.responses import HTMLResponse
+
+# app = FastAPI()
+
+# connected_clients = set()
+
+# @app.get("/")
+# async def get():
+#     return HTMLResponse("WebSocket server is running.")
+
+# @app.websocket("/ws")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await websocket.accept()
+#     connected_clients.add(websocket)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             print("Received:", data)
+#             for client in connected_clients:
+#                 await client.send_text({data})
+#     except WebSocketDisconnect:
+#         print("Client disconnected")
+#         connected_clients.remove(websocket)
+#     except Exception as e:
+#         print("WebSocket connection closed with error:", e)
+#         connected_clients.remove(websocket)
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect,Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
 
 connected_clients = set()
 
-@app.get("/")
-async def get():
-    return HTMLResponse("WebSocket server is running.")
+@app.get("/", response_class=HTMLResponse)
+async def get_chat_page(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -61,12 +92,12 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             print("Received:", data)
+            # Broadcast to all connected clients
             for client in connected_clients:
-                await client.send_text({data})
+                await client.send_text(f"Echo: {data}")
     except WebSocketDisconnect:
         print("Client disconnected")
         connected_clients.remove(websocket)
     except Exception as e:
         print("WebSocket connection closed with error:", e)
         connected_clients.remove(websocket)
-
