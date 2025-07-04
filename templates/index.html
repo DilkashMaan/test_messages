@@ -66,6 +66,12 @@
       button:hover {
         background-color: #0056b3;
       }
+      #name {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+      }
 
       .input-row {
         display: flex;
@@ -77,6 +83,11 @@
   <body>
     <div class="chat-container">
       <h1>WebSocket Chat</h1>
+      <div class="input-row" style="margin-bottom: 15px">
+        <input type="text" id="name" placeholder="Enter name" style="flex: 1" />
+        <button onclick="updateName()">Enter</button>
+      </div>
+
       <textarea id="msgarea" readonly></textarea>
       <div class="input-row">
         <input type="text" id="messageInput" placeholder="Type a message..." />
@@ -89,12 +100,23 @@
       const msgarea = document.getElementById("msgarea");
       const socket = new WebSocket("wss://test-messages.onrender.com/ws");
 
-      const sentMessages = new Set(); // to track what you sent
+      const sentMessages = new Set();
+      const nameInput = document.getElementById("name");
 
       socket.onopen = function () {
         console.log("Connected to WebSocket Server");
       };
 
+      function updateName() {
+        const name = nameInput.value.trim();
+        if (name) {
+          socket.send(`Name: ${name}`);
+          msgarea.value += `You set your name to: ${name}\n`;
+          nameInput.disabled = true;
+        } else {
+          alert("Please enter a valid name.");
+        }
+      }
       socket.onmessage = function (event) {
         const message = event.data.trim();
 
